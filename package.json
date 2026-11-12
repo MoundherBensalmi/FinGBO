@@ -1,0 +1,15 @@
+{
+  "name": "fingbo",
+  "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @fingbo/api --filter @fingbo/web dev",
+    "dev:api": "pnpm --filter @fingbo/api dev",
+    "dev:web": "pnpm --filter @fingbo/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter @fingbo/api db:generate",
+    "db:migrate": "pnpm --filter @fingbo/api db:migrate",
+    "db:studio": "pnpm --filter @fingbo/api db:studio"
+  }
+}
