@@ -1,0 +1,2 @@
+ALTER TABLE "movements" ALTER COLUMN "person_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "movements" ADD CONSTRAINT "movements_person_or_note" CHECK ("movements"."person_id" IS NOT NULL OR btrim(coalesce("movements"."note", '')) <> '');
