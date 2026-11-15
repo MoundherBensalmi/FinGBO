@@ -2,9 +2,11 @@ import { serve } from '@hono/node-server'
 import { app } from './app'
 import { client } from './db'
 import { env } from './env'
+import { checkStorage } from './lib/storage'
 
 const server = serve({ fetch: app.fetch, hostname: env.HOST, port: env.PORT }, (info) => {
   console.log(`API running on http://${info.address}:${info.port}`)
+  void checkStorage()
 })
 
 function shutdown() {

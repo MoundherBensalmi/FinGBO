@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { formatDateTime, formatTime } from '@/lib/dates'
 import { formatAmount } from '@/lib/money'
 import { cn } from '@/lib/utils'
+import { AttachmentsBadge } from './attachments-badge'
 import type { DayData, DayEntry } from './types'
 
 type MovementsListProps = {
@@ -43,6 +44,7 @@ function StatusBadges({ entry }: { entry: DayEntry }) {
           Trace · 0 DA
         </Badge>
       )}
+      <AttachmentsBadge files={entry.files} />
     </>
   )
 }

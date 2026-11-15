@@ -1,5 +1,6 @@
 import { authRouter } from '../modules/auth/auth.router'
 import { categoriesRouter } from '../modules/categories/categories.router'
+import { filesRouter } from '../modules/files/files.router'
 import { movementsRouter } from '../modules/movements/movements.router'
 import { peopleRouter } from '../modules/people/people.router'
 import { systemRouter } from '../modules/system/system.router'
@@ -11,6 +12,7 @@ export const appRouter = router({
   categories: categoriesRouter,
   people: peopleRouter,
   movements: movementsRouter,
+  files: filesRouter,
 })
 
 /** Imported (as a type only) by the web app for end-to-end type safety. */

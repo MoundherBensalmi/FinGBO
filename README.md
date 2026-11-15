@@ -56,7 +56,8 @@ The interface is in French. Amounts travel as centimes and are converted only fo
 
 ## Setup
 
-1. Copy `apps/api/.env.example` to `apps/api/.env` and fill in `DATABASE_URL` and `JWT_SECRET`.
+1. Copy `apps/api/.env.example` to `apps/api/.env` and fill in `DATABASE_URL`, `JWT_SECRET` and the
+   `S3_*` settings (RustFS/MinIO bucket for attachments; the API checks it at startup).
 2. Copy `apps/web/.env.example` to `apps/web/.env` (`VITE_API_URL`).
 
 ```

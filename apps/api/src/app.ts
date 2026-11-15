@@ -4,13 +4,15 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { secureHeaders } from 'hono/secure-headers'
 import { env } from './env'
+import { filesRoutes } from './modules/files/files.routes'
 import { createContext } from './trpc/context'
 import { appRouter } from './trpc/router'
 
 export const app = new Hono()
 
 app.use(logger())
-app.use(secureHeaders())
+// cross-origin: the web app (another address) shows attachment images from /files.
+app.use(secureHeaders({ crossOriginResourcePolicy: 'cross-origin' }))
 
 // The web app is served from another address, so only its origin(s) may call the API.
 app.use(
@@ -23,6 +25,8 @@ app.use(
 )
 
 app.get('/health', (c) => c.json({ ok: true }))
+
+app.route('/files', filesRoutes)
 
 app.all('/trpc/*', (c) =>
   fetchRequestHandler({

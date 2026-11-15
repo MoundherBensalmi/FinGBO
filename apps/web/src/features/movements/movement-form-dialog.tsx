@@ -26,7 +26,9 @@ import { errorMessage, serverFieldErrors } from '@/lib/errors'
 import { amountToInput } from '@/lib/money'
 import { queryClient, trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
+import { uploadMovementFiles } from '@/lib/files'
 import { CancelMovementDialog } from './cancel-movement-dialog'
+import { MovementAttachments } from './movement-attachments'
 import type { DayEntry } from './types'
 import { useQuickCreate } from './use-quick-create'
 
@@ -72,6 +74,15 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
   const [note, setNote] = useState(editing?.note ?? '')
   const [errors, setErrors] = useState<Errors>({})
   const [cancelOpen, setCancelOpen] = useState(false)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
+
+  // Saved files come from the live day data, so a removed file disappears at once.
+  const liveDay = useQuery({
+    ...trpc.movements.day.queryOptions({ date: editing?.date ?? '' }),
+    enabled: editing !== null,
+  })
+  const savedFiles = liveDay.data?.entries.find((e) => e.id === editing?.id)?.files ?? editing?.files ?? []
 
   const people = useQuery(trpc.people.list.queryOptions())
   const categories = useQuery(trpc.categories.list.queryOptions())
@@ -103,13 +114,32 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
     }
   }
 
-  const onSaved = (savedDate: string) => {
+  const onSaved = async (movementId: number, savedDate: string) => {
+    // The movement is saved; now send the chosen files (if any).
+    let filesFailed: string | null = null
+    if (pendingFiles.length > 0) {
+      setUploading(true)
+      try {
+        await uploadMovementFiles(movementId, pendingFiles)
+      } catch (err) {
+        filesFailed = err instanceof Error ? err.message : "L'envoi des fichiers a échoué"
+      } finally {
+        setUploading(false)
+      }
+    }
+
     void queryClient.invalidateQueries(trpc.movements.day.pathFilter())
     const otherDay = state.mode === 'create' ? savedDate !== state.date : savedDate !== editing?.date
     toast.success(
       editing ? 'Modification enregistrée' : direction === 'in' ? 'Entrée enregistrée' : 'Sortie enregistrée',
       otherDay ? { description: `Enregistrée le ${formatDayShort(savedDate)}` } : undefined,
     )
+    if (filesFailed) {
+      toast.error('Les pièces jointes n’ont pas été envoyées', {
+        description: `${filesFailed}. Ouvrez le mouvement pour réessayer.`,
+        duration: 10_000,
+      })
+    }
     onDone()
   }
   const onFailed = (error: unknown) => {
@@ -123,7 +153,7 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
 
   const create = useMutation(trpc.movements.create.mutationOptions({ onError: onFailed }))
   const update = useMutation(trpc.movements.update.mutationOptions({ onError: onFailed }))
-  const saving = create.isPending || update.isPending
+  const saving = create.isPending || update.isPending || uploading
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -148,8 +178,9 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
     }
 
     setErrors({})
-    if (editing) update.mutate({ ...parsed.data, id: editing.id }, { onSuccess: () => onSaved(parsed.data.date) })
-    else create.mutate(parsed.data, { onSuccess: () => onSaved(parsed.data.date) })
+    const done = (res: { id: number }) => void onSaved(res.id, parsed.data.date)
+    if (editing) update.mutate({ ...parsed.data, id: editing.id }, { onSuccess: done })
+    else create.mutate(parsed.data, { onSuccess: done })
   }
 
   const isIn = direction === 'in'
@@ -287,6 +318,13 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
           />
         </FormField>
 
+        <MovementAttachments
+          saved={savedFiles}
+          pending={pendingFiles}
+          onPendingChange={setPendingFiles}
+          disabled={saving}
+        />
+
         {errors.form && (
           <Alert variant="destructive">
             <AlertDescription>{errors.form}</AlertDescription>
@@ -309,7 +347,7 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
           </Button>
           <Button type="submit" form="movement-form" disabled={saving}>
             {saving && <Loader2 className="animate-spin" />}
-            Enregistrer
+            {uploading ? 'Envoi des fichiers…' : 'Enregistrer'}
           </Button>
         </div>
       </DialogFooter>

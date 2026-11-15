@@ -15,6 +15,13 @@ const envSchema = z.object({
   WEB_ORIGINS: commaList.pipe(z.array(z.url()).min(1, 'at least one origin is required')),
   /** "cloudflare" reads the real client IP from CF-Connecting-IP (only behind Cloudflare Tunnel). */
   TRUST_PROXY: z.enum(['none', 'cloudflare']).default('none'),
+
+  /** S3-compatible storage (RustFS, MinIO, AWS) for attachments. Only the API talks to it. */
+  S3_ENDPOINT: z.url(),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_BUCKET: z.string().min(1),
+  S3_ACCESS_KEY: z.string().min(1),
+  S3_SECRET_KEY: z.string().min(1),
 })
 
 const parsed = envSchema.safeParse(process.env)
