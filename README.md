@@ -96,3 +96,22 @@ Other commands: `pnpm typecheck`, `pnpm build`, `pnpm db:generate` (after a sche
 
 Production: `pnpm build`, then run `node --env-file=.env dist/index.mjs` in `apps/api`
 and serve `apps/web/dist` as static files.
+
+## Importing a year from the old CAISSE app
+
+Two steps, both in `apps/api/src/scripts`:
+
+```
+powershell -ExecutionPolicy Bypass -File apps/api/src/scripts/export-old-caisse.ps1 -AppDir <old app folder> -OutDir <export folder>
+pnpm --filter @fingbo/api import:caisse --dir <export folder> --year 2026 --username <admin>           # shows what it would do
+pnpm --filter @fingbo/api import:caisse --dir <export folder> --year 2026 --username <admin> --apply   # writes it
+```
+
+- The export reads a copy of the old database (SQL Server Compact 3.5) and writes three JSON files.
+- The import turns the year's old entries into movements (same day, same time, same person, the old
+  expense type as category), reusing people and categories that already exist with the same name.
+- The caisse balance left by the earlier years becomes one opening entry on 1 January.
+- The old app had no receipts, so each person who was paid gets one initial receipt on 1 January
+  (category `Reprise <year>`) equal to everything paid to them that year: their balance ends at 0.
+- It runs in one transaction, checks that every imported person is at 0 and that the caisse matches
+  the old app, and refuses to import the same year twice. Back up the database first (`pg_dump`).
