@@ -7,7 +7,7 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/react-router'
-import { AlertCircle, Loader2, LogOut, ReceiptText, ShieldUser, Users, Wallet } from 'lucide-react'
+import { AlertCircle, HandCoins, Loader2, LogOut, ReceiptText, ShieldUser, Users, Wallet } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { loadCurrentUser } from '@/features/auth/session'
@@ -65,7 +65,7 @@ function AppLayout() {
           </div>
         </div>
         {/* Phone: the sections as tabs under the header */}
-        <AppNav isAdmin={user.role === 'admin'} className="flex border-t px-2 md:hidden" />
+        <AppNav isAdmin={user.role === 'admin'} className="flex overflow-x-auto border-t px-2 [scrollbar-width:none] md:hidden" />
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-5">
@@ -78,6 +78,7 @@ function AppLayout() {
 const sections = [
   { to: '/', label: 'Caisse', icon: Wallet, exact: true },
   { to: '/receipts', label: 'Reçus', icon: ReceiptText, exact: false },
+  { to: '/debts', label: 'Dettes', icon: HandCoins, exact: false },
   { to: '/people', label: 'Personnes', icon: Users, exact: false },
   { to: '/admin/users', label: 'Utilisateurs', icon: ShieldUser, exact: false, adminOnly: true },
 ] as const
@@ -90,10 +91,10 @@ function AppNav({ isAdmin, className }: { isAdmin: boolean; className?: string }
           key={to}
           to={to}
           activeOptions={{ exact, includeSearch: false }}
-          className="text-muted-foreground hover:text-foreground flex flex-1 items-center justify-center gap-1.5 border-b-2 border-transparent px-2 py-2.5 text-sm font-medium md:flex-none md:rounded-md md:border-0 md:px-3 md:py-1.5"
+          className="text-muted-foreground hover:text-foreground flex flex-1 shrink-0 items-center justify-center gap-1.5 border-b-2 border-transparent px-2 py-2.5 text-sm font-medium md:flex-none md:rounded-md md:border-0 md:px-3 md:py-1.5"
           activeProps={{ className: 'text-foreground! border-foreground! md:bg-muted' }}
         >
-          {/* Phones under 400px: no room for 4 icons and labels in one row */}
+          {/* Phones under 400px: no room for 5 icons and labels in one row */}
           <Icon className="size-4 max-[400px]:hidden md:block" />
           {label}
         </Link>

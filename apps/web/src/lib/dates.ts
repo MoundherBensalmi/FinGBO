@@ -1,4 +1,4 @@
-import { addDays, addMonths, endOfMonth, format, formatDistanceToNowStrict, parseISO, startOfMonth } from 'date-fns'
+import { addDays, addMonths, differenceInCalendarDays, endOfMonth, format, formatDistanceToNowStrict, parseISO, startOfMonth } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 // Business days are plain "YYYY-MM-DD" strings in local time (no timezone shifts).
@@ -59,3 +59,6 @@ export const formatDateTime = (date: Date): string => format(date, "dd/MM/yyyy '
 
 /** "il y a 5 minutes", "il y a 2 jours" */
 export const formatAgo = (date: Date): string => formatDistanceToNowStrict(date, { locale: fr, addSuffix: true })
+
+/** Whole days from a business day to today: 0 for today, 1 for yesterday. */
+export const daysSince = (iso: string): number => differenceInCalendarDays(new Date(), parseISO(iso))

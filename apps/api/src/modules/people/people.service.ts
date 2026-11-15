@@ -1,6 +1,6 @@
 import type { PersonUpdateInput } from '@fingbo/shared/people'
 import { TRPCError } from '@trpc/server'
-import { and, asc, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import type { DbOrTx } from '../../db'
 import { movements, people, receipts } from '../../db/schema'
 import type { AuthUser } from '../auth/auth.service'
@@ -77,6 +77,55 @@ export async function listBalances(db: DbOrTx) {
       balance: receiptsTotal - paidTotal,
     }
   })
+}
+
+/**
+ * What you still owe, from the receipts: everyone whose balance is above 0, with the
+ * receipts not yet paid. Payments settle the oldest receipts first, so the open receipts
+ * are the newest ones; the oldest of them may be partly paid (`remaining` < `amount`).
+ */
+export async function listDebts(db: DbOrTx) {
+  const owed = (await listBalances(db)).filter((p) => p.balance > 0)
+  if (owed.length === 0) return { total: 0, people: [] }
+
+  const rows = await db.query.receipts.findMany({
+    where: and(isNull(receipts.cancelledAt), inArray(receipts.personId, owed.map((p) => p.id))),
+    orderBy: [asc(receipts.date), asc(receipts.createdAt), asc(receipts.id)],
+    columns: { id: true, personId: true, date: true, amount: true, note: true },
+    with: { category: { columns: { id: true, name: true } } },
+  })
+
+  const byPerson = new Map<number, typeof rows>()
+  for (const row of rows) {
+    const list = byPerson.get(row.personId)
+    if (list) list.push(row)
+    else byPerson.set(row.personId, [row])
+  }
+
+  const result = owed.map((p) => {
+    let paidLeft = p.paidTotal
+    const openReceipts = []
+    for (const r of byPerson.get(p.id) ?? []) {
+      const settled = Math.min(paidLeft, r.amount)
+      paidLeft -= settled
+      if (settled < r.amount) openReceipts.push({ ...r, remaining: r.amount - settled })
+    }
+    return {
+      id: p.id,
+      name: p.name,
+      phone: p.phone,
+      occupation: p.occupation,
+      receiptsTotal: p.receiptsTotal,
+      paidTotal: p.paidTotal,
+      balance: p.balance,
+      lastDate: p.lastDate,
+      oldestOpenDate: openReceipts[0]?.date ?? null,
+      openReceipts,
+    }
+  })
+
+  result.sort((a, b) => b.balance - a.balance)
+  return { total: result.reduce((s, p) => s + p.balance, 0), people: result }
 }
 
 async function findPerson(db: DbOrTx, id: number) {

@@ -46,6 +46,7 @@ routes/
   _app.tsx                  layout for logged-in pages: checks auth.me, header, navigation, logout
   _app/index.tsx            the caisse (main page): ?date=YYYY-MM-DD, today by default
   _app/receipts.tsx         receipts of a month: ?month=YYYY-MM
+  _app/debts.tsx            what you still owe, per person, with the receipts not yet paid
   _app/people/index.tsx     everyone with what you owe them
   _app/people/$personId.tsx a person's account (statement), what they carried, new receipt / pay
   _app/admin/users.tsx      users and their sessions (admins only; viewers are sent to /)
@@ -53,6 +54,9 @@ routes/
 
 A person's balance (what you owe them) = their receipts − the money paid out to them.
 Money received from them is shown on their page but never counts as a debt.
+
+The debts page (`people.debts`) lists everyone with a balance above 0. Payments settle the oldest
+receipts first, so the receipts still open are the newest ones (the oldest of them may be partly paid).
 
 A movement has a day and a time of day (`time`, local time). The form proposes the current time and
 it can be changed (typed on 24 hours: `1430` or `14:30`); the day's journal follows that time, and in

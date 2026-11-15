@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppDebtsRouteImport } from './routes/_app/debts'
 import { Route as AppReceiptsRouteImport } from './routes/_app/receipts'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppPeopleIndexRouteImport } from './routes/_app/people/index'
@@ -29,6 +30,11 @@ const LoginRoute = LoginRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDebtsRoute = AppDebtsRouteImport.update({
+  id: '/debts',
+  path: '/debts',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReceiptsRoute = AppReceiptsRouteImport.update({
@@ -55,6 +61,7 @@ const AppPeoplePersonIdRoute = AppPeoplePersonIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/debts': typeof AppDebtsRoute
   '/receipts': typeof AppReceiptsRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/people/$personId': typeof AppPeoplePersonIdRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/debts': typeof AppDebtsRoute
   '/receipts': typeof AppReceiptsRoute
   '/': typeof AppIndexRoute
   '/admin/users': typeof AppAdminUsersRoute
@@ -72,6 +80,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/debts': typeof AppDebtsRoute
   '/_app/receipts': typeof AppReceiptsRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
@@ -83,6 +92,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/debts'
     | '/receipts'
     | '/admin/users'
     | '/people/$personId'
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/debts'
     | '/receipts'
     | '/'
     | '/admin/users'
@@ -99,6 +110,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/login'
+    | '/_app/debts'
     | '/_app/receipts'
     | '/_app/'
     | '/_app/admin/users'
@@ -134,6 +146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/debts': {
+      id: '/_app/debts'
+      path: '/debts'
+      fullPath: '/debts'
+      preLoaderRoute: typeof AppDebtsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/receipts': {
       id: '/_app/receipts'
       path: '/receipts'
@@ -166,6 +185,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppDebtsRoute: typeof AppDebtsRoute
   AppReceiptsRoute: typeof AppReceiptsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
@@ -174,6 +194,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppDebtsRoute: AppDebtsRoute,
   AppReceiptsRoute: AppReceiptsRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
