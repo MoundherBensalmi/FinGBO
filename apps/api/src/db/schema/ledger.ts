@@ -7,6 +7,7 @@ import {
   pgEnum,
   pgTable,
   text,
+  time,
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
@@ -106,6 +107,8 @@ export const movements = pgTable(
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     date: date({ mode: 'string' }).notNull(),
+    /** Time of day on that date ("HH:MM:SS", local time), chosen in the form. It orders the day's journal. */
+    time: time({ precision: 0 }).notNull(),
     direction: movementDirection().notNull(),
     amount: money(),
     personId: integer().references(() => people.id, { onDelete: 'restrict' }),

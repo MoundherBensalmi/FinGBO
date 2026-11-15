@@ -49,7 +49,8 @@ export async function getDay(db: DbOrTx, date: IsoDate) {
 
   const rows = await db.query.movements.findMany({
     where: eq(movements.date, date),
-    orderBy: [asc(movements.createdAt), asc(movements.id)],
+    // By the time chosen for each entry; entries at the same time stay in the order they were typed.
+    orderBy: [asc(movements.time), asc(movements.createdAt), asc(movements.id)],
     with: movementWith,
   })
 
@@ -83,6 +84,7 @@ function rethrowReferenceError(err: unknown): never {
 
 const toRow = (v: ValidMovement) => ({
   date: v.date,
+  time: v.time,
   direction: v.direction,
   amount: v.amount,
   personId: v.personId,

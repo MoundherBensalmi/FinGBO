@@ -238,6 +238,7 @@ async function main() {
     if (carried !== 0) {
       movementRows.push({
         date: yearStart,
+        time: '00:00:00',
         direction: carried > 0 ? 'in' : 'out',
         amount: Math.abs(carried),
         personId: null,
@@ -254,6 +255,7 @@ async function main() {
       const amountOut = toCentimes(entry.SommeSortie)
       const base = {
         date: dayOf(entry),
+        time: entry.DateDepense.slice(11),
         personId,
         categoryId: categoryOfType.get(entry.IdType)!,
         note: entry.Observation,

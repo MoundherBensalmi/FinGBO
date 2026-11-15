@@ -3,7 +3,7 @@ import type { KeyboardEvent } from 'react'
 import { PersonLink } from '@/components/person-link'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatDateTime, formatTime } from '@/lib/dates'
+import { formatClock, formatDateTime } from '@/lib/dates'
 import { formatAmount } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { AttachmentsBadge } from '@/features/files/attachments-badge'
@@ -103,7 +103,7 @@ export function MovementsList({ day, onOpen }: MovementsListProps) {
                     onOpen && !cancelled && 'hover:bg-muted/60 focus-visible:bg-muted/60 cursor-pointer outline-none',
                   )}
                 >
-                  <td className="px-4 py-2.5 tabular-nums">{formatTime(entry.createdAt)}</td>
+                  <td className="px-4 py-2.5 tabular-nums">{formatClock(entry.time)}</td>
                   <td className="px-2 py-2.5 font-medium">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className={cn(cancelled && 'line-through')}>
@@ -176,7 +176,7 @@ export function MovementsList({ day, onOpen }: MovementsListProps) {
                 </span>
               </div>
               <p className="text-muted-foreground text-xs">
-                {formatTime(entry.createdAt)} · {entry.category.name}
+                {formatClock(entry.time)} · {entry.category.name}
                 {entry.byPerson && ` · par ${entry.byPerson.name}`}
               </p>
               {entry.note && <p className="text-sm break-words">{entry.note}</p>}

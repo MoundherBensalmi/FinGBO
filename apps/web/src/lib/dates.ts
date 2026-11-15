@@ -18,6 +18,28 @@ export const formatDayShort = (iso: string): string => format(parseISO(iso), 'dd
 /** "14:05" */
 export const formatTime = (date: Date): string => format(date, 'HH:mm')
 
+// Times of day are "HH:MM" or "HH:MM:SS" strings in local time, like the business days.
+
+/** The time it is now, "14:05". */
+export const currentTime = (): string => formatTime(new Date())
+
+/** "14:05:30" -> "14:05" */
+export const formatClock = (time: string): string => time.slice(0, 5)
+
+/**
+ * What the user typed as a time, as "HH:MM": "9:30", "930" and "0930" give "09:30", "14" gives "14:00".
+ * Returns null when it is not a time of day.
+ */
+export function normalizeTime(text: string): string | null {
+  const typed = text.trim()
+  const parts = /^(\d{1,2}):(\d{0,2})$/.exec(typed) ?? /^(\d{1,2}?)(\d{2})?$/.exec(typed)
+  if (!parts?.[1]) return null
+  const hours = Number(parts[1])
+  const minutes = Number(parts[2] ?? 0)
+  if (hours > 23 || minutes > 59) return null
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
 // Months are "YYYY-MM" strings.
 
 export const currentMonth = (): string => format(new Date(), 'yyyy-MM')

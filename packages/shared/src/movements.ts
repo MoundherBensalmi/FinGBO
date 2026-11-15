@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idSchema, isoDateSchema } from './common'
+import { idSchema, isoDateSchema, timeOfDaySchema } from './common'
 import { MAX_CENTIMES } from './money'
 
 export const MOVEMENT_DIRECTIONS = ['in', 'out'] as const
@@ -7,6 +7,8 @@ export type MovementDirection = (typeof MOVEMENT_DIRECTIONS)[number]
 
 const movementFields = z.object({
   date: isoDateSchema,
+  /** Time of day on that date; it orders the day's journal. */
+  time: timeOfDaySchema,
   direction: z.enum(MOVEMENT_DIRECTIONS),
   /** Centimes. 0 is allowed to keep a trace (the note must then explain it). */
   amount: z

@@ -10,6 +10,7 @@ import { CancelEntryDialog } from '@/components/cancel-entry-dialog'
 import { DatePicker } from '@/components/date-picker'
 import { EntityCombobox } from '@/components/entity-combobox'
 import { FormField, errorProps } from '@/components/form-field'
+import { TimeInput } from '@/components/time-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { AttachmentsEditor } from '@/features/files/attachments-editor'
-import { formatDateTime, formatDayShort } from '@/lib/dates'
+import { currentTime, formatClock, formatDateTime, formatDayShort, normalizeTime } from '@/lib/dates'
 import { errorMessage, serverFieldErrors } from '@/lib/errors'
 import { uploadFiles } from '@/lib/files'
 import { invalidateLedger } from '@/lib/invalidate'
@@ -44,7 +45,9 @@ export type MovementDialogState =
     }
   | { mode: 'edit'; entry: EditableMovement }
 
-type Errors = Partial<Record<'date' | 'amount' | 'personId' | 'byPersonId' | 'categoryId' | 'note' | 'form', string>>
+type Errors = Partial<
+  Record<'date' | 'time' | 'amount' | 'personId' | 'byPersonId' | 'categoryId' | 'note' | 'form', string>
+>
 
 type MovementFormDialogProps = {
   state: MovementDialogState | null
@@ -74,6 +77,8 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
 
   const [direction, setDirection] = useState<MovementDirection>(editing?.direction ?? preset?.direction ?? 'out')
   const [date, setDate] = useState(editing?.date ?? preset?.date ?? '')
+  /** "HH:MM". A new entry starts at the time it is now. */
+  const [time, setTime] = useState(editing ? formatClock(editing.time) : currentTime())
   const [amountText, setAmountText] = useState(editing ? amountToInput(editing.amount) : '')
   const [personId, setPersonId] = useState<number | null>(editing?.personId ?? preset?.personId ?? null)
   const [byPersonId, setByPersonId] = useState<number | null>(editing?.byPersonId ?? null)
@@ -147,7 +152,7 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
   const onFailed = (error: unknown) => {
     const fields = serverFieldErrors(error)
     const fieldErrors: Errors = {}
-    for (const key of ['date', 'amount', 'personId', 'byPersonId', 'categoryId', 'note'] as const) {
+    for (const key of ['date', 'time', 'amount', 'personId', 'byPersonId', 'categoryId', 'note'] as const) {
       if (fields[key]?.[0]) fieldErrors[key] = fields[key][0]
     }
     setErrors(Object.keys(fieldErrors).length ? fieldErrors : { form: errorMessage(error) })
@@ -165,12 +170,25 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
     const amountError =
       amountText.trim() === '' ? 'Le montant est obligatoire' : amount === null ? 'Montant invalide (ex. 1 250,50)' : undefined
 
-    const input = { date, direction, amount: amount ?? -1, personId, byPersonId, categoryId, note: note.trim() || null }
+    // An untouched time keeps its seconds, so entries typed in the same minute stay in order.
+    const typedTime = normalizeTime(time) ?? time
+    const savedTime = editing && typedTime === formatClock(editing.time) ? editing.time : typedTime
+    const input = {
+      date,
+      time: savedTime,
+      direction,
+      amount: amount ?? -1,
+      personId,
+      byPersonId,
+      categoryId,
+      note: note.trim() || null,
+    }
     const parsed = movementInputSchema.safeParse(input)
     if (amountError || !parsed.success) {
       const fields = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors
       setErrors({
         date: fields.date?.[0],
+        time: fields.time?.[0],
         amount: amountError ?? fields.amount?.[0],
         personId: fields.personId?.[0],
         byPersonId: fields.byPersonId?.[0],
@@ -226,8 +244,8 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
           ))}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Montant" htmlFor="amount" error={errors.amount}>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_9.5rem_7rem]">
+          <FormField label="Montant" htmlFor="amount" error={errors.amount} className="col-span-2 sm:col-span-1">
             <div className="relative">
               <Input
                 id="amount"
@@ -248,6 +266,10 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
 
           <FormField label="Date" htmlFor="date" error={errors.date}>
             <DatePicker id="date" value={date} onChange={setDate} className="h-10 w-full" />
+          </FormField>
+
+          <FormField label="Heure" htmlFor="time" error={errors.time}>
+            <TimeInput id="time" value={time} onChange={setTime} className="h-10" {...errorProps('time', errors.time)} />
           </FormField>
         </div>
 

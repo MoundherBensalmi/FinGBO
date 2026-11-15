@@ -106,12 +106,12 @@ export async function getPersonAccount(db: DbOrTx, id: number) {
     }),
     db.query.movements.findMany({
       where: eq(movements.personId, id),
-      orderBy: [asc(movements.date), asc(movements.createdAt)],
+      orderBy: [asc(movements.date), asc(movements.time), asc(movements.createdAt)],
       with: movementWith,
     }),
     db.query.movements.findMany({
       where: eq(movements.byPersonId, id),
-      orderBy: [desc(movements.date), desc(movements.createdAt)],
+      orderBy: [desc(movements.date), desc(movements.time), desc(movements.createdAt)],
       limit: 300,
       with: movementWith,
     }),
@@ -121,13 +121,12 @@ export async function getPersonAccount(db: DbOrTx, id: number) {
     | { type: 'receipt'; entry: ReturnType<typeof withReceiptFileLinks<(typeof personReceipts)[number]>> }
     | { type: 'movement'; entry: ReturnType<typeof withMovementFileLinks<(typeof personMovements)[number]>> }
 
+  // Day by day. Within a day: the receipts first (they have no time), then the movements
+  // in the order of their time. The sort is stable, so each list keeps the order it came in.
   const lines: Line[] = [
     ...personReceipts.map((r) => ({ type: 'receipt' as const, entry: withReceiptFileLinks(r) })),
     ...personMovements.map((m) => ({ type: 'movement' as const, entry: withMovementFileLinks(m) })),
-  ].sort(
-    (a, b) =>
-      a.entry.date.localeCompare(b.entry.date) || a.entry.createdAt.getTime() - b.entry.createdAt.getTime(),
-  )
+  ].sort((a, b) => a.entry.date.localeCompare(b.entry.date))
 
   let balance = 0
   let receiptsTotal = 0

@@ -33,7 +33,7 @@ Procedures: `publicProcedure` (login, health), `authedProcedure` (any logged-in 
 main.tsx, router.tsx   router with { queryClient, trpc } in its context; "session ended" handler
 lib/                   trpc client, auth token (localStorage), errors, dates, money, cn() (utils.ts)
 components/ui/         shadcn/ui components (add more with: npx shadcn@latest add <name>)
-components/            app-level pieces: FormField, DatePicker, EntityCombobox (search + create), ConfirmDialog
+components/            app-level pieces: FormField, DatePicker, TimeInput, EntityCombobox (search + create), ConfirmDialog
 features/<feature>/    components and hooks for one feature
   auth/                login form, logout, session check, device hints
   files/               attachments editor, thumbnails, paperclip badge (movements and receipts)
@@ -53,6 +53,10 @@ routes/
 
 A person's balance (what you owe them) = their receipts − the money paid out to them.
 Money received from them is shown on their page but never counts as a debt.
+
+A movement has a day and a time of day (`time`, local time). The form proposes the current time and
+it can be changed (typed on 24 hours: `1430` or `14:30`); the day's journal follows that time, and in
+a person's account each day lists the receipts first, then the movements in the order of their time.
 
 The interface is in French. Amounts travel as centimes and are converted only for display
 (`formatAmount`) and input (`parseDA`).
