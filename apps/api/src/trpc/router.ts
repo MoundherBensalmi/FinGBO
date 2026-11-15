@@ -3,6 +3,7 @@ import { categoriesRouter } from '../modules/categories/categories.router'
 import { filesRouter } from '../modules/files/files.router'
 import { movementsRouter } from '../modules/movements/movements.router'
 import { peopleRouter } from '../modules/people/people.router'
+import { receiptsRouter } from '../modules/receipts/receipts.router'
 import { systemRouter } from '../modules/system/system.router'
 import { router } from './init'
 
@@ -12,6 +13,7 @@ export const appRouter = router({
   categories: categoriesRouter,
   people: peopleRouter,
   movements: movementsRouter,
+  receipts: receiptsRouter,
   files: filesRouter,
 })
 

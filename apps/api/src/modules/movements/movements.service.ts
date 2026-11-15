@@ -7,7 +7,7 @@ import { movements } from '../../db/schema'
 import { isForeignKeyViolation } from '../../lib/pg-errors'
 import type { AuthUser } from '../auth/auth.service'
 import { assertCategoryActive } from '../categories/categories.service'
-import { toMovementFileView } from '../files/files.service'
+import { toFileView } from '../files/files.service'
 
 /** Input after validation (note trimmed, empty note turned into null). */
 type ValidMovement = Omit<MovementInput, 'note'> & { note: string | null }
@@ -16,6 +16,25 @@ const signedAmount = sql<string>`coalesce(sum(case when ${movements.direction} =
 
 const nameOnly = { columns: { id: true, name: true } } as const
 const userName = { columns: { id: true, username: true, fullName: true } } as const
+
+/** Related data loaded with each movement (also used by the person statement). */
+export const movementWith = {
+  person: nameOnly,
+  byPerson: nameOnly,
+  category: nameOnly,
+  createdBy: userName,
+  updatedBy: userName,
+  cancelledBy: userName,
+  files: {
+    columns: { id: true, originalName: true, mimeType: true },
+    orderBy: (f, { asc: byAsc }) => [byAsc(f.id)],
+  },
+} as const satisfies NonNullable<Parameters<DbOrTx['query']['movements']['findMany']>[0]>['with']
+
+/** Replaces the raw file rows with links the browser can open. */
+export const withMovementFileLinks = <T extends { files: { id: number; originalName: string; mimeType: string | null }[] }>(
+  row: T,
+) => ({ ...row, files: row.files.map(toFileView('movement')) })
 
 /**
  * Everything the caisse page shows for one day: the balance carried from the
@@ -31,18 +50,7 @@ export async function getDay(db: DbOrTx, date: IsoDate) {
   const rows = await db.query.movements.findMany({
     where: eq(movements.date, date),
     orderBy: [asc(movements.createdAt), asc(movements.id)],
-    with: {
-      person: nameOnly,
-      byPerson: nameOnly,
-      category: nameOnly,
-      createdBy: userName,
-      updatedBy: userName,
-      cancelledBy: userName,
-      files: {
-        columns: { id: true, originalName: true, mimeType: true },
-        orderBy: (f, { asc: byAsc }) => [byAsc(f.id)],
-      },
-    },
+    with: movementWith,
   })
 
   const openingBalance = Number(opening?.value ?? 0)
@@ -50,9 +58,9 @@ export async function getDay(db: DbOrTx, date: IsoDate) {
   let totalIn = 0
   let totalOut = 0
 
-  const entries = rows.map(({ files, ...row }) => {
-    const withFiles = { ...row, files: files.map(toMovementFileView) }
-    if (row.cancelledAt) return { ...withFiles, balanceAfter: null }
+  const entries = rows.map((raw) => {
+    const row = withMovementFileLinks(raw)
+    if (row.cancelledAt) return { ...row, balanceAfter: null }
     if (row.direction === 'in') {
       balance += row.amount
       totalIn += row.amount
@@ -60,7 +68,7 @@ export async function getDay(db: DbOrTx, date: IsoDate) {
       balance -= row.amount
       totalOut += row.amount
     }
-    return { ...withFiles, balanceAfter: balance }
+    return { ...row, balanceAfter: balance }
   })
 
   return { date, openingBalance, totalIn, totalOut, closingBalance: balance, entries }

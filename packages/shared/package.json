@@ -8,7 +8,8 @@
     "./common": "./src/common.ts",
     "./categories": "./src/categories.ts",
     "./people": "./src/people.ts",
-    "./movements": "./src/movements.ts"
+    "./movements": "./src/movements.ts",
+    "./receipts": "./src/receipts.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

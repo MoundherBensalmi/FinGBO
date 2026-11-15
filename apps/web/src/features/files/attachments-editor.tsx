@@ -7,37 +7,45 @@ import { errorMessage } from '@/lib/errors'
 import {
   ACCEPTED_FILES,
   type AttachmentView,
+  type FileKind,
   MAX_FILES_PER_UPLOAD,
   checkFile,
   fileUrl,
   prepareForUpload,
 } from '@/lib/files'
-import { queryClient, trpc } from '@/lib/trpc'
+import { invalidateLedger } from '@/lib/invalidate'
+import { trpc } from '@/lib/trpc'
 import { AttachmentThumb } from './attachment-thumb'
 
-type MovementAttachmentsProps = {
-  /** Files already saved on the movement (edit mode). */
+type AttachmentsEditorProps = {
+  kind: FileKind
+  /** Files already saved on the entry (edit mode). */
   saved: AttachmentView[]
-  /** Files chosen but not sent yet; they are sent when the movement is saved. */
+  /** Files chosen but not sent yet; they are sent when the entry is saved. */
   pending: File[]
   onPendingChange: (files: File[]) => void
   disabled?: boolean
 }
 
-export function MovementAttachments({ saved, pending, onPendingChange, disabled }: MovementAttachmentsProps) {
+/** Attachments section of the movement and receipt forms. */
+export function AttachmentsEditor({ kind, saved: savedProp, pending, onPendingChange, disabled }: AttachmentsEditorProps) {
   const fileInput = useRef<HTMLInputElement>(null)
   const cameraInput = useRef<HTMLInputElement>(null)
   const [preparing, setPreparing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
+  // Files removed while the form is open disappear at once.
+  const [removed, setRemoved] = useState<number[]>([])
+  const saved = savedProp.filter((f) => !removed.includes(f.id))
 
   // Local previews for files not sent yet, released when they go away.
   const previews = useMemo(() => pending.map((f) => URL.createObjectURL(f)), [pending])
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews])
 
   const remove = useMutation(
-    trpc.files.deleteMovementFile.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.movements.day.pathFilter())
+    trpc.files.delete.mutationOptions({
+      onSuccess: (_, input) => {
+        setRemoved((ids) => [...ids, input.id])
+        void invalidateLedger()
         toast.success('Fichier supprimé')
       },
       onError: (e) => toast.error(errorMessage(e)),
@@ -112,7 +120,7 @@ export function MovementAttachments({ saved, pending, onPendingChange, disabled 
                     size="sm"
                     variant="destructive"
                     disabled={remove.isPending}
-                    onClick={() => remove.mutate({ id: file.id })}
+                    onClick={() => remove.mutate({ kind, id: file.id })}
                   >
                     {remove.isPending && <Loader2 className="animate-spin" />}
                     Supprimer

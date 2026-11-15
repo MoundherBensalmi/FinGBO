@@ -8,7 +8,7 @@ export function useQuickCreate() {
   const person = useMutation(
     trpc.people.create.mutationOptions({
       onSuccess: (p) => {
-        void queryClient.invalidateQueries(trpc.people.list.queryFilter())
+        void queryClient.invalidateQueries(trpc.people.pathFilter())
         toast.success(`Personne « ${p.name} » ajoutée`)
       },
       onError: (e) => toast.error(errorMessage(e)),

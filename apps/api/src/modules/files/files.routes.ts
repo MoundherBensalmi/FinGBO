@@ -7,13 +7,13 @@ import { db } from '../../db'
 import { getClientInfo } from '../../lib/client-info'
 import { getObject } from '../../lib/storage'
 import { authenticate } from '../auth/auth.service'
-import { isValidFileLink } from './file-links'
-import { MAX_FILES_PER_UPLOAD, MAX_FILE_BYTES, attachMovementFiles, findMovementFile } from './files.service'
+import { type FileKind, isValidFileLink } from './file-links'
+import { FILE_KINDS, MAX_FILES_PER_UPLOAD, MAX_FILE_BYTES, attachFiles, findFile } from './files.service'
 
 /**
- * Plain HTTP routes for files (tRPC only carries JSON):
- *   POST /files/movement/:movementId   multipart "files" -> attach (admins, Bearer token)
- *   GET  /files/movement/:fileId?exp&sig -> the file itself (signed link from the API)
+ * Plain HTTP routes for files (tRPC only carries JSON). :kind is "movement" or "receipt".
+ *   POST /files/:kind/:parentId          multipart "files" -> attach (admins, Bearer token)
+ *   GET  /files/:kind/:fileId?exp&sig    -> the file itself (signed link from the API)
  */
 export const filesRoutes = new Hono()
 
@@ -30,26 +30,32 @@ const parseId = (value: string | undefined) => {
   return Number.isSafeInteger(id) && id > 0 ? id : null
 }
 
+const parseKind = (value: string | undefined): FileKind | null =>
+  (FILE_KINDS as readonly string[]).includes(value ?? '') ? (value as FileKind) : null
+
 filesRoutes.post(
-  '/movement/:movementId',
+  '/:kind/:parentId',
   bodyLimit({
     maxSize: MAX_FILES_PER_UPLOAD * MAX_FILE_BYTES + 1024 * 1024,
     onError: (c) => c.json({ error: 'Envoi trop volumineux' }, 413),
   }),
   async (c) => {
     try {
+      const kind = parseKind(c.req.param('kind'))
+      if (!kind) return c.json({ error: 'Not found' }, 404)
+
       const auth = await authenticate(db, c.req.header('authorization'), getClientInfo(c))
       if (!auth) return c.json({ error: 'Veuillez vous connecter' }, 401)
       if (auth.user.role !== 'admin') return c.json({ error: 'Réservé aux administrateurs' }, 403)
 
-      const movementId = parseId(c.req.param('movementId'))
-      if (!movementId) return c.json({ error: 'Mouvement invalide' }, 400)
+      const parentId = parseId(c.req.param('parentId'))
+      if (!parentId) return c.json({ error: 'Entrée invalide' }, 400)
 
       const body = await c.req.parseBody({ all: true })
       const field = body['files']
       const files = (Array.isArray(field) ? field : [field]).filter((f): f is File => f instanceof File)
 
-      const saved = await attachMovementFiles(db, auth.user, movementId, files)
+      const saved = await attachFiles(db, auth.user, kind, parentId, files)
       return c.json({ files: saved }, 201)
     } catch (err) {
       return errorResponse(c, err)
@@ -57,14 +63,15 @@ filesRoutes.post(
   },
 )
 
-filesRoutes.get('/movement/:fileId', async (c) => {
+filesRoutes.get('/:kind/:fileId', async (c) => {
   try {
+    const kind = parseKind(c.req.param('kind'))
     const fileId = parseId(c.req.param('fileId'))
-    if (!fileId || !isValidFileLink('movement', fileId, c.req.query('exp'), c.req.query('sig'))) {
+    if (!kind || !fileId || !isValidFileLink(kind, fileId, c.req.query('exp'), c.req.query('sig'))) {
       return c.json({ error: 'Lien expiré ou invalide' }, 403)
     }
 
-    const file = await findMovementFile(db, fileId)
+    const file = await findFile(db, kind, fileId)
     const object = file && (await getObject(file.storageKey))
     if (!file || !object) return c.json({ error: 'Fichier introuvable' }, 404)
 

@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, Loader2 } from 'lucide
 import { type FormEvent, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { CancelEntryDialog } from '@/components/cancel-entry-dialog'
 import { DatePicker } from '@/components/date-picker'
 import { EntityCombobox } from '@/components/entity-combobox'
 import { FormField, errorProps } from '@/components/form-field'
@@ -21,20 +22,27 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { AttachmentsEditor } from '@/features/files/attachments-editor'
 import { formatDateTime, formatDayShort } from '@/lib/dates'
 import { errorMessage, serverFieldErrors } from '@/lib/errors'
-import { amountToInput } from '@/lib/money'
-import { queryClient, trpc } from '@/lib/trpc'
+import { uploadFiles } from '@/lib/files'
+import { invalidateLedger } from '@/lib/invalidate'
+import { amountToInput, formatAmount } from '@/lib/money'
+import { trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
-import { uploadMovementFiles } from '@/lib/files'
-import { CancelMovementDialog } from './cancel-movement-dialog'
-import { MovementAttachments } from './movement-attachments'
-import type { DayEntry } from './types'
+import type { EditableMovement } from './types'
 import { useQuickCreate } from './use-quick-create'
 
 export type MovementDialogState =
-  | { mode: 'create'; direction: MovementDirection; date: string }
-  | { mode: 'edit'; entry: DayEntry }
+  | {
+      mode: 'create'
+      direction: MovementDirection
+      date: string
+      /** Pre-selected person (e.g. "Payer" from a person's page) and their category. */
+      personId?: number
+      categoryId?: number | null
+    }
+  | { mode: 'edit'; entry: EditableMovement }
 
 type Errors = Partial<Record<'date' | 'amount' | 'personId' | 'byPersonId' | 'categoryId' | 'note' | 'form', string>>
 
@@ -50,7 +58,7 @@ export function MovementFormDialog({ state, onClose }: MovementFormDialogProps) 
         {/* Remount the form for each opening so it starts from fresh values. */}
         {state && (
           <MovementForm
-            key={state.mode === 'edit' ? `edit-${state.entry.id}` : `new-${state.direction}-${state.date}`}
+            key={state.mode === 'edit' ? `edit-${state.entry.id}` : `new-${state.direction}-${state.date}-${state.personId ?? ''}`}
             state={state}
             onDone={onClose}
           />
@@ -62,13 +70,14 @@ export function MovementFormDialog({ state, onClose }: MovementFormDialogProps) 
 
 function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: () => void }) {
   const editing = state.mode === 'edit' ? state.entry : null
+  const preset = state.mode === 'create' ? state : null
 
-  const [direction, setDirection] = useState<MovementDirection>(editing?.direction ?? (state.mode === 'create' ? state.direction : 'out'))
-  const [date, setDate] = useState(editing?.date ?? (state.mode === 'create' ? state.date : ''))
+  const [direction, setDirection] = useState<MovementDirection>(editing?.direction ?? preset?.direction ?? 'out')
+  const [date, setDate] = useState(editing?.date ?? preset?.date ?? '')
   const [amountText, setAmountText] = useState(editing ? amountToInput(editing.amount) : '')
-  const [personId, setPersonId] = useState<number | null>(editing?.personId ?? null)
+  const [personId, setPersonId] = useState<number | null>(editing?.personId ?? preset?.personId ?? null)
   const [byPersonId, setByPersonId] = useState<number | null>(editing?.byPersonId ?? null)
-  const [categoryId, setCategoryId] = useState<number | null>(editing?.categoryId ?? null)
+  const [categoryId, setCategoryId] = useState<number | null>(editing?.categoryId ?? preset?.categoryId ?? null)
   /** Once the category is chosen by hand, picking a person no longer changes it. */
   const [categoryTouched, setCategoryTouched] = useState(editing !== null)
   const [note, setNote] = useState(editing?.note ?? '')
@@ -76,13 +85,6 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
   const [cancelOpen, setCancelOpen] = useState(false)
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
-
-  // Saved files come from the live day data, so a removed file disappears at once.
-  const liveDay = useQuery({
-    ...trpc.movements.day.queryOptions({ date: editing?.date ?? '' }),
-    enabled: editing !== null,
-  })
-  const savedFiles = liveDay.data?.entries.find((e) => e.id === editing?.id)?.files ?? editing?.files ?? []
 
   const people = useQuery(trpc.people.list.queryOptions())
   const categories = useQuery(trpc.categories.list.queryOptions())
@@ -120,7 +122,7 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
     if (pendingFiles.length > 0) {
       setUploading(true)
       try {
-        await uploadMovementFiles(movementId, pendingFiles)
+        await uploadFiles('movement', movementId, pendingFiles)
       } catch (err) {
         filesFailed = err instanceof Error ? err.message : "L'envoi des fichiers a échoué"
       } finally {
@@ -128,11 +130,11 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
       }
     }
 
-    void queryClient.invalidateQueries(trpc.movements.day.pathFilter())
-    const otherDay = state.mode === 'create' ? savedDate !== state.date : savedDate !== editing?.date
+    void invalidateLedger()
+    const originalDate = editing?.date ?? preset?.date
     toast.success(
       editing ? 'Modification enregistrée' : direction === 'in' ? 'Entrée enregistrée' : 'Sortie enregistrée',
-      otherDay ? { description: `Enregistrée le ${formatDayShort(savedDate)}` } : undefined,
+      savedDate !== originalDate ? { description: `Enregistrée le ${formatDayShort(savedDate)}` } : undefined,
     )
     if (filesFailed) {
       toast.error('Les pièces jointes n’ont pas été envoyées', {
@@ -153,6 +155,7 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
 
   const create = useMutation(trpc.movements.create.mutationOptions({ onError: onFailed }))
   const update = useMutation(trpc.movements.update.mutationOptions({ onError: onFailed }))
+  const cancel = useMutation(trpc.movements.cancel.mutationOptions())
   const saving = create.isPending || update.isPending || uploading
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -318,8 +321,9 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
           />
         </FormField>
 
-        <MovementAttachments
-          saved={savedFiles}
+        <AttachmentsEditor
+          kind="movement"
+          saved={editing?.files ?? []}
           pending={pendingFiles}
           onPendingChange={setPendingFiles}
           disabled={saving}
@@ -353,11 +357,21 @@ function MovementForm({ state, onDone }: { state: MovementDialogState; onDone: (
       </DialogFooter>
 
       {editing && (
-        <CancelMovementDialog
-          entry={editing}
+        <CancelEntryDialog
           open={cancelOpen}
           onOpenChange={setCancelOpen}
-          onCancelled={onDone}
+          title="Annuler ce mouvement ?"
+          description={`${editing.direction === 'in' ? 'Entrée' : 'Sortie'} de ${formatAmount(editing.amount)}${
+            editing.person ? ` — ${editing.person.name}` : ''
+          }. Il restera visible, barré, mais ne comptera plus dans la caisse. Cette action est définitive.`}
+          confirmLabel="Annuler le mouvement"
+          onConfirm={async (reason) => {
+            await cancel.mutateAsync({ id: editing.id, reason })
+            void invalidateLedger()
+            toast.success('Mouvement annulé')
+            setCancelOpen(false)
+            onDone()
+          }}
         />
       )}
     </>

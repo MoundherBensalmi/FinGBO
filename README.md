@@ -35,12 +35,21 @@ components/ui/         shadcn/ui components (add more with: npx shadcn@latest ad
 components/            app-level pieces: FormField, DatePicker, EntityCombobox (search + create)
 features/<feature>/    components and hooks for one feature
   auth/                login form, logout, session check, device hints
-  movements/           caisse day view, entry form, cancel dialog
+  files/               attachments editor, thumbnails, paperclip badge (movements and receipts)
+  movements/           caisse day view, entry form
+  receipts/            month view, receipt form
+  people/              balances, person form, statement, "carried" list
 routes/
-  login.tsx            login page (?redirect= brings you back after logging in)
-  _app.tsx             layout for logged-in pages: checks auth.me, header, logout
-  _app/index.tsx       the caisse (main page): ?date=YYYY-MM-DD, today by default
+  login.tsx                 login page (?redirect= brings you back after logging in)
+  _app.tsx                  layout for logged-in pages: checks auth.me, header, navigation, logout
+  _app/index.tsx            the caisse (main page): ?date=YYYY-MM-DD, today by default
+  _app/receipts.tsx         receipts of a month: ?month=YYYY-MM
+  _app/people/index.tsx     everyone with what you owe them
+  _app/people/$personId.tsx a person's account (statement), what they carried, new receipt / pay
 ```
+
+A person's balance (what you owe them) = their receipts − the money paid out to them.
+Money received from them is shown on their page but never counts as a debt.
 
 The interface is in French. Amounts travel as centimes and are converted only for display
 (`formatAmount`) and input (`parseDA`).

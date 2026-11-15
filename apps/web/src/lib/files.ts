@@ -1,7 +1,8 @@
-import type { RouterOutputs } from './trpc'
 import { getToken } from './auth-token'
 
-export type AttachmentView = RouterOutputs['movements']['day']['entries'][number]['files'][number]
+/** An attachment as the API returns it (movement or receipt). */
+export type AttachmentView = { id: number; originalName: string; mimeType: string | null; url: string }
+export type FileKind = 'movement' | 'receipt'
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024
 export const MAX_FILES_PER_UPLOAD = 10
@@ -9,8 +10,6 @@ export const ACCEPTED_FILES = 'image/jpeg,image/png,image/webp,image/heic,image/
 
 /** Links from the API are relative ("/files/movement/12?..."). */
 export const fileUrl = (path: string) => `${import.meta.env.VITE_API_URL}${path}`
-
-export const isImage = (mime: string | null | undefined) => Boolean(mime?.startsWith('image/'))
 
 /** Browsers can't draw HEIC, so it can't be previewed or shrunk here. */
 const canResize = (type: string) => ['image/jpeg', 'image/png', 'image/webp'].includes(type)
@@ -56,13 +55,14 @@ export function checkFile(file: File): string | null {
   return null
 }
 
-export async function uploadMovementFiles(movementId: number, files: File[]): Promise<void> {
+/** Sends files to a movement or a receipt. Throws an Error with a French message. */
+export async function uploadFiles(kind: FileKind, parentId: number, files: File[]): Promise<void> {
   const form = new FormData()
   for (const file of files) form.append('files', file, file.name)
   const token = getToken()
   let res: Response
   try {
-    res = await fetch(fileUrl(`/files/movement/${movementId}`), {
+    res = await fetch(fileUrl(`/files/${kind}/${parentId}`), {
       method: 'POST',
       body: form,
       headers: token ? { Authorization: `Bearer ${token}` } : {},

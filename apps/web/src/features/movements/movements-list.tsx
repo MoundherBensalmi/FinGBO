@@ -1,11 +1,12 @@
 import { Ban } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
+import { PersonLink } from '@/components/person-link'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatDateTime, formatTime } from '@/lib/dates'
 import { formatAmount } from '@/lib/money'
 import { cn } from '@/lib/utils'
-import { AttachmentsBadge } from './attachments-badge'
+import { AttachmentsBadge } from '@/features/files/attachments-badge'
 import type { DayData, DayEntry } from './types'
 
 type MovementsListProps = {
@@ -17,7 +18,7 @@ type MovementsListProps = {
 const userLabel = (u: { username: string; fullName: string | null } | null) => u?.fullName ?? u?.username ?? '?'
 
 function PersonLabel({ entry }: { entry: DayEntry }) {
-  if (entry.person) return <>{entry.person.name}</>
+  if (entry.person) return <PersonLink id={entry.person.id} name={entry.person.name} />
   return <span className="text-muted-foreground italic">{entry.direction === 'out' ? 'Dépense ponctuelle' : 'Sans personne'}</span>
 }
 

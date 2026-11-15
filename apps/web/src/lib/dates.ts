@@ -1,4 +1,4 @@
-import { addDays, format, parseISO } from 'date-fns'
+import { addDays, addMonths, endOfMonth, format, parseISO, startOfMonth } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 // Business days are plain "YYYY-MM-DD" strings in local time (no timezone shifts).
@@ -17,6 +17,20 @@ export const formatDayShort = (iso: string): string => format(parseISO(iso), 'dd
 
 /** "14:05" */
 export const formatTime = (date: Date): string => format(date, 'HH:mm')
+
+// Months are "YYYY-MM" strings.
+
+export const currentMonth = (): string => format(new Date(), 'yyyy-MM')
+export const shiftMonth = (month: string, by: number): string => format(addMonths(parseISO(`${month}-01`), by), 'yyyy-MM')
+
+/** First and last day of a month, e.g. "2031-03" -> { from: "2031-03-01", to: "2031-03-31" } */
+export const monthRange = (month: string) => {
+  const first = parseISO(`${month}-01`)
+  return { from: toIsoDate(startOfMonth(first)), to: toIsoDate(endOfMonth(first)) }
+}
+
+/** "mars 2031" */
+export const formatMonth = (month: string): string => format(parseISO(`${month}-01`), 'MMMM yyyy', { locale: fr })
 
 /** "13/11/2026 à 14:05" */
 export const formatDateTime = (date: Date): string => format(date, "dd/MM/yyyy 'à' HH:mm")
