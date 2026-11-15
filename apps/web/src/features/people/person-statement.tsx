@@ -1,5 +1,6 @@
 import { Ban } from 'lucide-react'
-import type { KeyboardEvent } from 'react'
+import { type KeyboardEvent, useMemo } from 'react'
+import { SortableHeader, useSort } from '@/components/sortable-header'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { AttachmentsBadge } from '@/features/files/attachments-badge'
@@ -69,10 +70,24 @@ function rowActions(line: StatementLine, onOpen: PersonStatementProps['onOpen'])
 
 /** Receipts and money movements with this person, newest first, with the balance after each. */
 export function PersonStatement({ lines, onOpen }: PersonStatementProps) {
+  const newestFirst = useMemo(() => [...lines].reverse(), [lines])
+  const amountIf = (line: StatementLine, column: 'receipt' | 'in' | 'out') =>
+    (line.type === 'receipt' ? 'receipt' : line.entry.direction) === column ? line.entry.amount : null
+  const { sorted, sort } = useSort(newestFirst, {
+    // By position in the account, so lines of the same day keep their order; ascending = oldest first.
+    date: (l) => lines.indexOf(l),
+    operation: (l) => operation(l).label,
+    category: (l) => l.entry.category.name,
+    note: (l) => l.entry.note,
+    receipt: (l) => amountIf(l, 'receipt'),
+    out: (l) => amountIf(l, 'out'),
+    in: (l) => amountIf(l, 'in'),
+    balance: (l) => l.balanceAfter,
+  })
+
   if (lines.length === 0) {
     return <p className="text-muted-foreground px-4 py-10 text-center text-sm">Aucune opération avec cette personne.</p>
   }
-  const newestFirst = [...lines].reverse()
 
   return (
     <>
@@ -80,18 +95,18 @@ export function PersonStatement({ lines, onOpen }: PersonStatementProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-              <th className="px-4 py-2 font-medium">Date</th>
-              <th className="px-2 py-2 font-medium">Opération</th>
-              <th className="px-2 py-2 font-medium">Catégorie</th>
-              <th className="px-2 py-2 font-medium">Observation</th>
-              <th className="px-2 py-2 text-right font-medium">Achat</th>
-              <th className="px-2 py-2 text-right font-medium">Payé</th>
-              <th className="px-2 py-2 text-right font-medium">Reçu</th>
-              <th className="px-4 py-2 text-right font-medium">Solde dû</th>
+              <SortableHeader sort={sort} column="date" className="px-4">Date</SortableHeader>
+              <SortableHeader sort={sort} column="operation" className="px-2">Opération</SortableHeader>
+              <SortableHeader sort={sort} column="category" className="px-2">Catégorie</SortableHeader>
+              <SortableHeader sort={sort} column="note" className="px-2">Observation</SortableHeader>
+              <SortableHeader sort={sort} column="receipt" align="right" className="px-2">Achat</SortableHeader>
+              <SortableHeader sort={sort} column="out" align="right" className="px-2">Payé</SortableHeader>
+              <SortableHeader sort={sort} column="in" align="right" className="px-2">Reçu</SortableHeader>
+              <SortableHeader sort={sort} column="balance" align="right" className="px-4">Solde dû</SortableHeader>
             </tr>
           </thead>
           <tbody>
-            {newestFirst.map((line) => {
+            {sorted.map((line) => {
               const e = line.entry
               const cancelled = Boolean(e.cancelledAt)
               const op = operation(line)
@@ -141,7 +156,7 @@ export function PersonStatement({ lines, onOpen }: PersonStatementProps) {
       </div>
 
       <ul className="divide-y md:hidden">
-        {newestFirst.map((line) => {
+        {sorted.map((line) => {
           const e = line.entry
           const cancelled = Boolean(e.cancelledAt)
           const op = operation(line)

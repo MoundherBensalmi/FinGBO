@@ -1,6 +1,7 @@
 import { Ban } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { PersonLink } from '@/components/person-link'
+import { SortableHeader, useSort } from '@/components/sortable-header'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { AttachmentsBadge } from '@/features/files/attachments-badge'
@@ -60,6 +61,14 @@ function rowActions(entry: ReceiptEntry, onOpen: ReceiptsListProps['onOpen']) {
 }
 
 export function ReceiptsList({ entries, total, onOpen, hidePerson }: ReceiptsListProps) {
+  const { sorted, sort } = useSort(entries, {
+    date: (e) => e.date,
+    person: (e) => e.person.name,
+    category: (e) => e.category.name,
+    note: (e) => e.note,
+    amount: (e) => e.amount,
+  })
+
   if (entries.length === 0) {
     return <p className="text-muted-foreground px-4 py-10 text-center text-sm">Aucun reçu pour cette période.</p>
   }
@@ -70,15 +79,19 @@ export function ReceiptsList({ entries, total, onOpen, hidePerson }: ReceiptsLis
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-              <th className="px-4 py-2 font-medium">Date</th>
-              {!hidePerson && <th className="px-2 py-2 font-medium">Acheté chez</th>}
-              <th className="px-2 py-2 font-medium">Catégorie</th>
-              <th className="px-2 py-2 font-medium">Observation</th>
-              <th className="px-4 py-2 text-right font-medium">Montant</th>
+              <SortableHeader sort={sort} column="date" className="px-4">Date</SortableHeader>
+              {!hidePerson && (
+                <SortableHeader sort={sort} column="person" className="px-2">
+                  Acheté chez
+                </SortableHeader>
+              )}
+              <SortableHeader sort={sort} column="category" className="px-2">Catégorie</SortableHeader>
+              <SortableHeader sort={sort} column="note" className="px-2">Observation</SortableHeader>
+              <SortableHeader sort={sort} column="amount" align="right" className="px-4">Montant</SortableHeader>
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => {
+            {sorted.map((entry) => {
               const cancelled = Boolean(entry.cancelledAt)
               return (
                 <tr
@@ -127,7 +140,7 @@ export function ReceiptsList({ entries, total, onOpen, hidePerson }: ReceiptsLis
       </div>
 
       <ul className="divide-y md:hidden">
-        {entries.map((entry) => {
+        {sorted.map((entry) => {
           const cancelled = Boolean(entry.cancelledAt)
           return (
             <li

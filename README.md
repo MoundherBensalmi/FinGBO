@@ -33,7 +33,8 @@ Procedures: `publicProcedure` (login, health), `authedProcedure` (any logged-in 
 main.tsx, router.tsx   router with { queryClient, trpc } in its context; "session ended" handler
 lib/                   trpc client, auth token (localStorage), errors, dates, money, cn() (utils.ts)
 components/ui/         shadcn/ui components (add more with: npx shadcn@latest add <name>)
-components/            app-level pieces: FormField, DatePicker, TimeInput, EntityCombobox (search + create), ConfirmDialog
+components/            app-level pieces: FormField, DatePicker, TimeInput, EntityCombobox (search + create), ConfirmDialog,
+                       SortableHeader + useSort (click a column name to sort a table)
 features/<feature>/    components and hooks for one feature
   auth/                login form, logout, session check, device hints
   files/               attachments editor, thumbnails, paperclip badge (movements and receipts)

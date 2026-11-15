@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { ChevronRight, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { SortableHeader, useSort } from '@/components/sortable-header'
 import { Input } from '@/components/ui/input'
 import type { RouterOutputs } from '@/lib/trpc'
 import { daysSince, formatDayShort } from '@/lib/dates'
@@ -36,22 +37,30 @@ function SummaryCard({ label, value, className }: { label: string; value: string
 }
 
 function OpenReceipts({ receipts }: { receipts: OpenReceipt[] }) {
+  const { sorted, sort } = useSort(receipts, {
+    date: (r) => r.date,
+    age: (r) => daysSince(r.date),
+    category: (r) => r.category.name,
+    note: (r) => r.note,
+    amount: (r) => r.amount,
+    remaining: (r) => r.remaining,
+  })
   return (
     <>
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-              <th className="px-4 py-2 font-medium">Date</th>
-              <th className="px-2 py-2 font-medium">Depuis</th>
-              <th className="px-2 py-2 font-medium">Catégorie</th>
-              <th className="px-2 py-2 font-medium">Observation</th>
-              <th className="px-2 py-2 text-right font-medium">Montant</th>
-              <th className="px-4 py-2 text-right font-medium">Reste à payer</th>
+              <SortableHeader sort={sort} column="date" className="px-4">Date</SortableHeader>
+              <SortableHeader sort={sort} column="age" className="px-2">Depuis</SortableHeader>
+              <SortableHeader sort={sort} column="category" className="px-2">Catégorie</SortableHeader>
+              <SortableHeader sort={sort} column="note" className="px-2">Observation</SortableHeader>
+              <SortableHeader sort={sort} column="amount" align="right" className="px-2">Montant</SortableHeader>
+              <SortableHeader sort={sort} column="remaining" align="right" className="px-4">Reste à payer</SortableHeader>
             </tr>
           </thead>
           <tbody>
-            {receipts.map((r) => (
+            {sorted.map((r) => (
               <tr key={r.id} className="border-b last:border-0">
                 <td className="px-4 py-2 whitespace-nowrap tabular-nums">{formatDayShort(r.date)}</td>
                 <td className="text-muted-foreground px-2 py-2 whitespace-nowrap">{ageLabel(r.date)}</td>
@@ -71,7 +80,7 @@ function OpenReceipts({ receipts }: { receipts: OpenReceipt[] }) {
       </div>
 
       <ul className="divide-y md:hidden">
-        {receipts.map((r) => (
+        {sorted.map((r) => (
           <li key={r.id} className="flex flex-col gap-0.5 px-4 py-2.5">
             <div className="flex items-start justify-between gap-3">
               <span className="font-medium">{r.category.name}</span>

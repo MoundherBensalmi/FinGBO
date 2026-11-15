@@ -4,6 +4,7 @@ import { KeyRound, MonitorSmartphone, Pencil, Plus, UserCheck, UserX } from 'luc
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { SortableHeader, useSort } from '@/components/sortable-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PasswordResetDialog } from '@/features/users/password-reset-dialog'
@@ -52,6 +53,13 @@ function UsersPage() {
   const [sessionsFor, setSessionsFor] = useState<UserRow | null>(null)
   const [toggle, setToggle] = useState<UserRow | null>(null)
   const setDisabled = useMutation(trpc.users.setDisabled.mutationOptions())
+
+  const { sorted, sort } = useSort(users, {
+    user: (u) => displayName(u),
+    role: (u) => roleLabel(u.role),
+    status: (u) => (u.disabledAt ? 1 : 0),
+    activity: (u) => u.lastSeenAt,
+  })
 
   const activeAdmins = users.filter((u) => u.role === 'admin' && !u.disabledAt).length
   /** Why this user can't be disabled, if so (the API checks it too). */
@@ -119,15 +127,15 @@ function UsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-                <th className="px-4 py-2 font-medium">Utilisateur</th>
-                <th className="px-2 py-2 font-medium">Rôle</th>
-                <th className="px-2 py-2 font-medium">Statut</th>
-                <th className="px-2 py-2 font-medium">Dernière activité</th>
+                <SortableHeader sort={sort} column="user" className="px-4">Utilisateur</SortableHeader>
+                <SortableHeader sort={sort} column="role" className="px-2">Rôle</SortableHeader>
+                <SortableHeader sort={sort} column="status" className="px-2">Statut</SortableHeader>
+                <SortableHeader sort={sort} column="activity" className="px-2">Dernière activité</SortableHeader>
                 <th className="px-4 py-2 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {sorted.map((u) => (
                 <tr key={u.id} className="border-b last:border-0">
                   <td className="px-4 py-2.5">
                     <p className="font-medium">
@@ -162,7 +170,7 @@ function UsersPage() {
 
         {/* Phone: cards */}
         <ul className="divide-y md:hidden">
-          {users.map((u) => (
+          {sorted.map((u) => (
             <li key={u.id} className="flex flex-col gap-2 px-4 py-3">
               <div className="min-w-0">
                 <p className="truncate font-medium">

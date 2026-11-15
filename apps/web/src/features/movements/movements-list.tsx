@@ -1,6 +1,7 @@
 import { Ban } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { PersonLink } from '@/components/person-link'
+import { SortableHeader, useSort } from '@/components/sortable-header'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatClock, formatDateTime } from '@/lib/dates'
@@ -67,7 +68,20 @@ function rowActions(entry: DayEntry, onOpen: MovementsListProps['onOpen']) {
   }
 }
 
+const personName = (e: DayEntry) => e.person?.name ?? (e.direction === 'out' ? 'Dépense ponctuelle' : 'Sans personne')
+
 export function MovementsList({ day, onOpen }: MovementsListProps) {
+  const { sorted, sort } = useSort(day.entries, {
+    time: (e) => e.time,
+    person: personName,
+    by: (e) => e.byPerson?.name,
+    category: (e) => e.category.name,
+    note: (e) => e.note,
+    in: (e) => (e.direction === 'in' ? e.amount : null),
+    out: (e) => (e.direction === 'out' ? e.amount : null),
+    balance: (e) => e.balanceAfter,
+  })
+
   if (day.entries.length === 0) {
     return <p className="text-muted-foreground px-4 py-10 text-center text-sm">Aucun mouvement ce jour-là.</p>
   }
@@ -79,18 +93,18 @@ export function MovementsList({ day, onOpen }: MovementsListProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-              <th className="px-4 py-2 font-medium">Heure</th>
-              <th className="px-2 py-2 font-medium">Personne</th>
-              <th className="px-2 py-2 font-medium">Par</th>
-              <th className="px-2 py-2 font-medium">Catégorie</th>
-              <th className="px-2 py-2 font-medium">Observation</th>
-              <th className="px-2 py-2 text-right font-medium">Entrée</th>
-              <th className="px-2 py-2 text-right font-medium">Sortie</th>
-              <th className="px-4 py-2 text-right font-medium">Solde</th>
+              <SortableHeader sort={sort} column="time" className="px-4">Heure</SortableHeader>
+              <SortableHeader sort={sort} column="person" className="px-2">Personne</SortableHeader>
+              <SortableHeader sort={sort} column="by" className="px-2">Par</SortableHeader>
+              <SortableHeader sort={sort} column="category" className="px-2">Catégorie</SortableHeader>
+              <SortableHeader sort={sort} column="note" className="px-2">Observation</SortableHeader>
+              <SortableHeader sort={sort} column="in" align="right" className="px-2">Entrée</SortableHeader>
+              <SortableHeader sort={sort} column="out" align="right" className="px-2">Sortie</SortableHeader>
+              <SortableHeader sort={sort} column="balance" align="right" className="px-4">Solde</SortableHeader>
             </tr>
           </thead>
           <tbody>
-            {day.entries.map((entry) => {
+            {sorted.map((entry) => {
               const cancelled = Boolean(entry.cancelledAt)
               const amount = formatAmount(entry.amount)
               return (
@@ -145,7 +159,7 @@ export function MovementsList({ day, onOpen }: MovementsListProps) {
 
       {/* Phone: one card per entry */}
       <ul className="divide-y md:hidden">
-        {day.entries.map((entry) => {
+        {sorted.map((entry) => {
           const cancelled = Boolean(entry.cancelledAt)
           const sign = entry.direction === 'in' ? '+' : '−'
           return (

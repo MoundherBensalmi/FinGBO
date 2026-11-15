@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { SortableHeader, useSort } from '@/components/sortable-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { type PersonBalance, describeBalance } from '@/features/people/balance'
@@ -45,6 +46,16 @@ function PeoplePage() {
         (!q || normalize(`${p.name} ${p.occupation ?? ''} ${p.phone ?? ''}`).includes(q)),
     )
   }, [people, query, onlyOpen])
+
+  const { sorted, sort } = useSort(shown, {
+    name: (p) => p.name,
+    phone: (p) => p.phone,
+    receipts: (p) => p.receiptsTotal,
+    paid: (p) => p.paidTotal,
+    balance: (p) => p.balance,
+    received: (p) => p.receivedTotal || null,
+    last: (p) => p.lastDate,
+  })
 
   const owedByYou = people.reduce((s, p) => s + Math.max(p.balance, 0), 0)
   const owedToYou = people.reduce((s, p) => s + Math.max(-p.balance, 0), 0)
@@ -109,17 +120,17 @@ function PeoplePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-                    <th className="px-4 py-2 font-medium">Nom</th>
-                    <th className="px-2 py-2 font-medium">Téléphone</th>
-                    <th className="px-2 py-2 text-right font-medium">Achats</th>
-                    <th className="px-2 py-2 text-right font-medium">Payé</th>
-                    <th className="px-2 py-2 text-right font-medium">Solde</th>
-                    <th className="px-2 py-2 text-right font-medium">Reçu de lui</th>
-                    <th className="px-4 py-2 text-right font-medium">Dernière opération</th>
+                    <SortableHeader sort={sort} column="name" className="px-4">Nom</SortableHeader>
+                    <SortableHeader sort={sort} column="phone" className="px-2">Téléphone</SortableHeader>
+                    <SortableHeader sort={sort} column="receipts" align="right" className="px-2">Achats</SortableHeader>
+                    <SortableHeader sort={sort} column="paid" align="right" className="px-2">Payé</SortableHeader>
+                    <SortableHeader sort={sort} column="balance" align="right" className="px-2">Solde</SortableHeader>
+                    <SortableHeader sort={sort} column="received" align="right" className="px-2">Reçu de lui</SortableHeader>
+                    <SortableHeader sort={sort} column="last" align="right" className="px-4">Dernière opération</SortableHeader>
                   </tr>
                 </thead>
                 <tbody>
-                  {shown.map((p) => (
+                  {sorted.map((p) => (
                     <tr key={p.id} className="hover:bg-muted/60 border-b last:border-0">
                       <td className="px-4 py-2.5">
                         <Link to="/people/$personId" params={{ personId: String(p.id) }} className="font-medium hover:underline">
@@ -147,7 +158,7 @@ function PeoplePage() {
             </div>
 
             <ul className="divide-y md:hidden">
-              {shown.map((p) => (
+              {sorted.map((p) => (
                 <li key={p.id}>
                   <button type="button" onClick={() => open(p)} className="active:bg-muted/60 flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
                     <div className="min-w-0">
