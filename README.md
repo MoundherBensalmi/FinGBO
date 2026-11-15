@@ -26,6 +26,25 @@ scripts/            command-line tools (create-user)
 Procedures: `publicProcedure` (login, health), `authedProcedure` (any logged-in user),
 `adminProcedure` (admins only).
 
+### Web (`apps/web/src`)
+
+```
+main.tsx, router.tsx   router with { queryClient, trpc } in its context; "session ended" handler
+lib/                   trpc client, auth token (localStorage), errors, dates, money, cn() (utils.ts)
+components/ui/         shadcn/ui components (add more with: npx shadcn@latest add <name>)
+components/            app-level pieces: FormField, DatePicker, EntityCombobox (search + create)
+features/<feature>/    components and hooks for one feature
+  auth/                login form, logout, session check, device hints
+  movements/           caisse day view, entry form, cancel dialog
+routes/
+  login.tsx            login page (?redirect= brings you back after logging in)
+  _app.tsx             layout for logged-in pages: checks auth.me, header, logout
+  _app/index.tsx       the caisse (main page): ?date=YYYY-MM-DD, today by default
+```
+
+The interface is in French. Amounts travel as centimes and are converted only for display
+(`formatAmount`) and input (`parseDA`).
+
 ### Login
 
 - `auth.login({ username, password, device? })` returns `{ token, user }`. The web app keeps the

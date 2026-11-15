@@ -17,8 +17,8 @@ export const deviceHintsSchema = z.object({
 export type DeviceHints = z.infer<typeof deviceHintsSchema>
 
 export const loginInputSchema = z.object({
-  username: z.string().trim().min(1, 'Username is required').max(64),
-  password: z.string().min(1, 'Password is required').max(256),
+  username: z.string().trim().min(1, "Le nom d'utilisateur est obligatoire").max(64),
+  password: z.string().min(1, 'Le mot de passe est obligatoire').max(256),
   device: deviceHintsSchema.optional(),
 })
 export type LoginInput = z.infer<typeof loginInputSchema>

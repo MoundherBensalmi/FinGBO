@@ -36,11 +36,11 @@ export async function login(db: DbOrTx, input: LoginInput, client: ClientInfo) {
   if (!user || !passwordOk) {
     recordLoginFailure(client.ip, input.username)
     // Same message for an unknown username and a wrong password.
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid username or password' })
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: "Nom d'utilisateur ou mot de passe incorrect" })
   }
 
   if (user.disabledAt) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'This account is disabled' })
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Ce compte est désactivé' })
   }
 
   clearLoginFailures(client.ip, input.username)

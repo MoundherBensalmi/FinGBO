@@ -4,7 +4,11 @@
   "type": "module",
   "exports": {
     "./money": "./src/money.ts",
-    "./auth": "./src/auth.ts"
+    "./auth": "./src/auth.ts",
+    "./common": "./src/common.ts",
+    "./categories": "./src/categories.ts",
+    "./people": "./src/people.ts",
+    "./movements": "./src/movements.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

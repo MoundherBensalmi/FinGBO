@@ -13,7 +13,7 @@ const t = initTRPC.context<Context>().create({
     const hide = isProduction && error.code === 'INTERNAL_SERVER_ERROR'
     return {
       ...shape,
-      message: hide ? 'Internal server error' : shape.message,
+      message: hide ? 'Erreur interne du serveur' : shape.message,
       data: {
         ...shape.data,
         zodError: error.cause instanceof ZodError ? z.flattenError(error.cause) : null,
@@ -29,14 +29,14 @@ export const publicProcedure = t.procedure
 
 /** Any logged-in user (admin or viewer). */
 export const authedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.auth) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Please log in' })
+  if (!ctx.auth) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Veuillez vous connecter' })
   return next({ ctx: { ...ctx, auth: ctx.auth } })
 })
 
 /** Admins only: writing data and managing users. */
 export const adminProcedure = authedProcedure.use(({ ctx, next }) => {
   if (ctx.auth.user.role !== 'admin') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admins only' })
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Réservé aux administrateurs' })
   }
   return next()
 })

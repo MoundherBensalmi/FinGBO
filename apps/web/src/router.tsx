@@ -1,5 +1,6 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router'
-import { queryClient, trpc } from './lib/trpc'
+import { clearToken } from './lib/auth-token'
+import { queryClient, setUnauthorizedHandler, trpc } from './lib/trpc'
 import { routeTree } from './routeTree.gen'
 
 export type RouterContext = {
@@ -15,6 +16,17 @@ export function getRouter() {
     defaultPreload: 'intent',
     // TanStack Query caches the data, so the router doesn't need its own cache.
     defaultPreloadStaleTime: 0,
+  })
+
+  // The session was revoked or the user disabled while the app was open:
+  // forget the token and go back to the login page, then return here after logging in.
+  setUnauthorizedHandler(() => {
+    clearToken()
+    queryClient.removeQueries()
+    const { pathname, href } = router.state.location
+    if (pathname !== '/login') {
+      void router.navigate({ to: '/login', search: { redirect: href } })
+    }
   })
 
   return router

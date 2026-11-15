@@ -29,7 +29,7 @@ export function assertLoginAllowed(ip: string | null, username: string): void {
       const minutes = Math.ceil((entry.resetAt - now) / 60_000)
       throw new TRPCError({
         code: 'TOO_MANY_REQUESTS',
-        message: `Too many failed attempts. Try again in ${minutes} min.`,
+        message: `Trop de tentatives échouées. Réessayez dans ${minutes} min.`,
       })
     }
   }
