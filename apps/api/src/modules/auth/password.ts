@@ -1,6 +1,6 @@
 import { hash, verify } from '@node-rs/argon2'
 
-export const MIN_PASSWORD_LENGTH = 8
+export { MIN_PASSWORD_LENGTH } from '@fingbo/shared/users'
 
 /** argon2id hash with the library's recommended settings. */
 export function hashPassword(password: string): Promise<string> {

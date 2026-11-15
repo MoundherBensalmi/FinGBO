@@ -8,7 +8,8 @@ Caisse, receipts and payments for GBOne.
 |---|---|
 | `apps/api` | Hono + tRPC API, Drizzle schema and migrations (PostgreSQL). Runs on `127.0.0.1:3001`. |
 | `apps/web` | React + TanStack Router + TanStack Query (Vite). Runs on `localhost:3000`. |
-| `packages/shared` | Code used by both apps: `money` (amounts in centimes), `auth` (roles, login input schema). |
+| `packages/shared` | Code used by both apps: `money` (amounts in centimes), `auth` (roles, login input schema),
+`users` (user and password forms, used by the admin panel). |
 
 ### API (`apps/api/src`)
 
@@ -32,13 +33,14 @@ Procedures: `publicProcedure` (login, health), `authedProcedure` (any logged-in 
 main.tsx, router.tsx   router with { queryClient, trpc } in its context; "session ended" handler
 lib/                   trpc client, auth token (localStorage), errors, dates, money, cn() (utils.ts)
 components/ui/         shadcn/ui components (add more with: npx shadcn@latest add <name>)
-components/            app-level pieces: FormField, DatePicker, EntityCombobox (search + create)
+components/            app-level pieces: FormField, DatePicker, EntityCombobox (search + create), ConfirmDialog
 features/<feature>/    components and hooks for one feature
   auth/                login form, logout, session check, device hints
   files/               attachments editor, thumbnails, paperclip badge (movements and receipts)
   movements/           caisse day view, entry form
   receipts/            month view, receipt form
   people/              balances, person form, statement, "carried" list
+  users/               admin panel: user form, password reset, sessions dialog
 routes/
   login.tsx                 login page (?redirect= brings you back after logging in)
   _app.tsx                  layout for logged-in pages: checks auth.me, header, navigation, logout
@@ -46,6 +48,7 @@ routes/
   _app/receipts.tsx         receipts of a month: ?month=YYYY-MM
   _app/people/index.tsx     everyone with what you owe them
   _app/people/$personId.tsx a person's account (statement), what they carried, new receipt / pay
+  _app/admin/users.tsx      users and their sessions (admins only; viewers are sent to /)
 ```
 
 A person's balance (what you owe them) = their receipts − the money paid out to them.
@@ -62,6 +65,18 @@ The interface is in French. Amounts travel as centimes and are converted only fo
   as it is revoked or the user is disabled.
 - `auth.me` returns the current user; `auth.logout` revokes the current session.
 - 5 failed logins for one username from one IP (or 20 from one IP) block for 15 minutes.
+
+### Users and sessions (admin panel)
+
+`modules/users` (all procedures are admin-only) and the page `/admin/users`:
+
+- `users.list`: role, status, who created them, last activity and open sessions.
+- `users.create`, `users.update` (full name, role), `users.setDisabled`, `users.resetPassword`.
+- `users.sessions` (marks the `current` one), `users.revokeSession`, `users.revokeAllSessions`.
+- Disabling a user or resetting their password revokes their open sessions (an admin resetting
+  their own password keeps the session they are using). Revoking your own current session logs you out.
+- An admin can't disable themself or remove their own admin role, and the last active admin can
+  never be disabled or demoted (checked under a lock, so two admins can't demote each other at once).
 
 ## Setup
 

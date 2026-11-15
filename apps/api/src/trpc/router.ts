@@ -5,6 +5,7 @@ import { movementsRouter } from '../modules/movements/movements.router'
 import { peopleRouter } from '../modules/people/people.router'
 import { receiptsRouter } from '../modules/receipts/receipts.router'
 import { systemRouter } from '../modules/system/system.router'
+import { usersRouter } from '../modules/users/users.router'
 import { router } from './init'
 
 export const appRouter = router({
@@ -15,6 +16,7 @@ export const appRouter = router({
   movements: movementsRouter,
   receipts: receiptsRouter,
   files: filesRouter,
+  users: usersRouter,
 })
 
 /** Imported (as a type only) by the web app for end-to-end type safety. */

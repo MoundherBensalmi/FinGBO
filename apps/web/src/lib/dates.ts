@@ -1,4 +1,4 @@
-import { addDays, addMonths, endOfMonth, format, parseISO, startOfMonth } from 'date-fns'
+import { addDays, addMonths, endOfMonth, format, formatDistanceToNowStrict, parseISO, startOfMonth } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 // Business days are plain "YYYY-MM-DD" strings in local time (no timezone shifts).
@@ -34,3 +34,6 @@ export const formatMonth = (month: string): string => format(parseISO(`${month}-
 
 /** "13/11/2026 à 14:05" */
 export const formatDateTime = (date: Date): string => format(date, "dd/MM/yyyy 'à' HH:mm")
+
+/** "il y a 5 minutes", "il y a 2 jours" */
+export const formatAgo = (date: Date): string => formatDistanceToNowStrict(date, { locale: fr, addSuffix: true })
