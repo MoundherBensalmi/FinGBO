@@ -116,9 +116,9 @@ pnpm workspace), so in Dokploy set *Build Path* to `/` and *Dockerfile Path* as 
 | API | `apps/api/Dockerfile` | 3001 | Environment variables from `apps/api/.env.example` (`HOST`, `PORT`, `NODE_ENV` are already set in the image). Use `TRUST_PROXY=proxy` behind Dokploy's Traefik. `WEB_ORIGINS` = the web app's domain. |
 | Web | `apps/web/Dockerfile` | 80 | Build argument `VITE_API_URL` = the API's public URL (baked in at build time: changing it needs a rebuild). |
 
-- The API container applies pending migrations (`node dist/migrate.mjs`) every time it starts.
-- First admin, from a terminal in the running API container:
-  `node dist/create-user.mjs --username <name>`
+- The API image has every dependency installed (dev ones included). Migrations are not run on
+  start: run them by hand from a terminal in the API container (it opens in `/repo/apps/api`):
+  `pnpm db:migrate`, and for the first admin `pnpm user:create --username <name>`.
 
 ## Importing a year from the old CAISSE app
 
