@@ -4,6 +4,6 @@ RUN npm i -g pnpm@10.28.2
 WORKDIR /repo
 COPY . .
 ARG VITE_API_URL
-RUN pnpm install --frozen-lockfile && pnpm --filter @fingbo/web build
+RUN pnpm install && pnpm --filter @fingbo/web build
 WORKDIR /repo/apps/web
 CMD ["pnpm", "start"]
