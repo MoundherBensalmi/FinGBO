@@ -114,7 +114,7 @@ pnpm workspace), so in Dokploy set *Build Path* to `/` and *Dockerfile Path* as 
 | App | Dockerfile | Port | Settings |
 | --- | --- | --- | --- |
 | API | `apps/api/Dockerfile` | 3001 | Environment variables from `apps/api/.env.example` (`HOST`, `PORT`, `NODE_ENV` are already set in the image). Use `TRUST_PROXY=proxy` behind Dokploy's Traefik. `WEB_ORIGINS` = the web app's domain. |
-| Web | `apps/web/Dockerfile` | 80 | Build argument `VITE_API_URL` = the API's public URL (baked in at build time: changing it needs a rebuild). |
+| Web | `apps/web/Dockerfile` | 80 | `VITE_API_URL` = the API's public URL, under *Build-time Arguments* (not Environment): it is baked in at build time, so changing it needs a rebuild. Served by `pnpm start` (`serve -s dist`). |
 
 - The API image has every dependency installed (dev ones included). Migrations are not run on
   start: run them by hand from a terminal in the API container (it opens in `/repo/apps/api`):

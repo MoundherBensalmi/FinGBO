@@ -10,6 +10,7 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "serve -s dist -l 80",
     "typecheck": "tsr generate && tsc --noEmit"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "react": "^19.2.0",
     "react-day-picker": "^10.0.2",
     "react-dom": "^19.2.0",
+    "serve": "^14.2.8",
     "sonner": "^2.0.8",
     "superjson": "^2.2.6",
     "tailwind-merge": "^3.7.0",
