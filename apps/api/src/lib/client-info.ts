@@ -15,6 +15,8 @@ export function getClientInfo(c: Context): ClientInfo {
   // Behind Cloudflare Tunnel every request comes from 127.0.0.1; the real address
   // is in this header. Only trusted when configured, otherwise anyone could fake it.
   if (env.TRUST_PROXY === 'cloudflare') ip = c.req.header('cf-connecting-ip')
+  // Same behind a reverse proxy (Traefik in Dokploy), which sets X-Real-IP.
+  else if (env.TRUST_PROXY === 'proxy') ip = c.req.header('x-real-ip')
 
   if (!ip) {
     try {

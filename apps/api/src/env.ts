@@ -13,8 +13,11 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'must be at least 32 characters'),
   /** Web app addresses allowed to call the API, comma-separated. */
   WEB_ORIGINS: commaList.pipe(z.array(z.url()).min(1, 'at least one origin is required')),
-  /** "cloudflare" reads the real client IP from CF-Connecting-IP (only behind Cloudflare Tunnel). */
-  TRUST_PROXY: z.enum(['none', 'cloudflare']).default('none'),
+  /**
+   * "cloudflare" reads the real client IP from CF-Connecting-IP (only behind Cloudflare Tunnel).
+   * "proxy" reads it from X-Real-IP (behind a reverse proxy such as Traefik in Dokploy).
+   */
+  TRUST_PROXY: z.enum(['none', 'cloudflare', 'proxy']).default('none'),
 
   /** S3-compatible storage (RustFS, MinIO, AWS) for attachments. Only the API talks to it. */
   S3_ENDPOINT: z.url(),

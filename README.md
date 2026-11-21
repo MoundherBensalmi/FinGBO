@@ -106,6 +106,20 @@ Other commands: `pnpm typecheck`, `pnpm build`, `pnpm db:generate` (after a sche
 Production: `pnpm build`, then run `node --env-file=.env dist/index.mjs` in `apps/api`
 and serve `apps/web/dist` as static files.
 
+## Docker (Dokploy)
+
+Each app has its own Dockerfile. Both are built **from the repository root** (they need the whole
+pnpm workspace), so in Dokploy set *Build Path* to `/` and *Dockerfile Path* as below.
+
+| App | Dockerfile | Port | Settings |
+| --- | --- | --- | --- |
+| API | `apps/api/Dockerfile` | 3001 | Environment variables from `apps/api/.env.example` (`HOST`, `PORT`, `NODE_ENV` are already set in the image). Use `TRUST_PROXY=proxy` behind Dokploy's Traefik. `WEB_ORIGINS` = the web app's domain. |
+| Web | `apps/web/Dockerfile` | 80 | Build argument `VITE_API_URL` = the API's public URL (baked in at build time: changing it needs a rebuild). |
+
+- The API container applies pending migrations (`node dist/migrate.mjs`) every time it starts.
+- First admin, from a terminal in the running API container:
+  `node dist/create-user.mjs --username <name>`
+
 ## Importing a year from the old CAISSE app
 
 Two steps, both in `apps/api/src/scripts`:
