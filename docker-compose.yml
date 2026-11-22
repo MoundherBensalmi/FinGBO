@@ -1,0 +1,37 @@
+# Runs the API and the web app in Docker on this machine.
+# PostgreSQL (Windows service) and RustFS (its own container) stay outside: the API reaches
+# them through host.docker.internal.
+#
+#   docker compose up -d --build     build and start (again after each code change)
+#   docker compose logs -f api       follow the API logs
+#   docker compose exec api pnpm db:migrate
+#   docker compose down              stop and remove the containers
+#
+# Settings: apps/api/.env.docker (copy apps/api/.env.docker.example) and, optionally,
+# VITE_API_URL in a .env file next to this one.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: apps/api/.env.docker
+    ports:
+      - "3001:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # The address the BROWSER uses to reach the API (baked in at build time).
+        # From other PCs on the network, use this machine's IP, e.g. http://192.168.1.10:3001
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped

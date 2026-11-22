@@ -120,6 +120,24 @@ pnpm workspace), so in Dokploy set *Build Path* to `/` and *Dockerfile Path* as 
   start: run them by hand from a terminal in the API container (it opens in `/repo/apps/api`):
   `pnpm db:migrate`, and for the first admin `pnpm user:create --username <name>`.
 
+## Docker on this Windows PC (docker compose)
+
+`docker-compose.yml` runs the API (port 3001) and the web app (port 3000). PostgreSQL (Windows
+service) and RustFS (its own container) stay outside; the API reaches them through
+`host.docker.internal`.
+
+1. Copy `apps/api/.env.docker.example` to `apps/api/.env.docker` and fill it in.
+2. To open the app from other PCs, put `VITE_API_URL=http://<this PC's IP>:3001` in a `.env` next to
+   `docker-compose.yml`, and add `http://<this PC's IP>:3000` to `WEB_ORIGINS`.
+
+```
+docker compose up -d --build              # build and start (again after each code change)
+docker compose exec api pnpm db:migrate   # migrations, by hand
+docker compose down                       # stop
+```
+
+Both containers restart by themselves (`restart: unless-stopped`) when Docker starts.
+
 ## Importing a year from the old CAISSE app
 
 Two steps, both in `apps/api/src/scripts`:
