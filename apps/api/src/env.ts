@@ -13,6 +13,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'must be at least 32 characters'),
   /** Web app addresses allowed to call the API, comma-separated. */
   WEB_ORIGINS: commaList.pipe(z.array(z.url()).min(1, 'at least one origin is required')),
+  /** Web app addresses on the local network (*.local), comma-separated. Optional. */
+  WEB_ORIGINS_LOCAL: commaList.pipe(z.array(z.url())).default([]),
   /**
    * "cloudflare" reads the real client IP from CF-Connecting-IP (only behind Cloudflare Tunnel).
    * "proxy" reads it from X-Real-IP (behind a reverse proxy such as Traefik in Dokploy).

@@ -17,7 +17,7 @@ app.use(secureHeaders({ crossOriginResourcePolicy: 'cross-origin' }))
 // The web app is served from another address, so only its origin(s) may call the API.
 app.use(
   cors({
-    origin: env.WEB_ORIGINS,
+    origin: [...env.WEB_ORIGINS, ...env.WEB_ORIGINS_LOCAL],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Authorization', 'Content-Type'],
     maxAge: 600,
