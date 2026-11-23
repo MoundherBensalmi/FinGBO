@@ -3,6 +3,7 @@
 **/.env
 **/.env.*
 !**/.env.example
+!apps/web/.env.docker
 .git
 .vscode
 .idea
