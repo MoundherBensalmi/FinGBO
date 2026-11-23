@@ -1,3 +1,4 @@
+import { API_URL } from './api-url'
 import { getToken } from './auth-token'
 
 /** An attachment as the API returns it (movement or receipt). */
@@ -9,7 +10,7 @@ export const MAX_FILES_PER_UPLOAD = 10
 export const ACCEPTED_FILES = 'image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf'
 
 /** Links from the API are relative ("/files/movement/12?..."). */
-export const fileUrl = (path: string) => `${import.meta.env.VITE_API_URL}${path}`
+export const fileUrl = (path: string) => `${API_URL}${path}`
 
 /** Browsers can't draw HEIC, so it can't be previewed or shrunk here. */
 const canResize = (type: string) => ['image/jpeg', 'image/png', 'image/webp'].includes(type)

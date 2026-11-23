@@ -8,7 +8,7 @@
 #   docker compose down              stop and remove the containers
 #
 # Settings: apps/api/.env.docker (copy apps/api/.env.docker.example) and, optionally,
-# VITE_API_URL in a .env file next to this one.
+# VITE_API_URL (and VITE_API_URL_LOCAL, used when opened from a *.local address) in a .env file next to this one.
 
 services:
   api:
@@ -28,6 +28,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+        VITE_API_URL_LOCAL: ${VITE_API_URL_LOCAL:-}
     ports:
       - "3000:3002"
     depends_on:

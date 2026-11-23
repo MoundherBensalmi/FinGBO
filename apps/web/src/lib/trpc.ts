@@ -4,6 +4,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client'
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
 import type { inferRouterOutputs } from '@trpc/server'
 import superjson from 'superjson'
+import { API_URL } from './api-url'
 import { getToken } from './auth-token'
 import { isUnauthorized } from './errors'
 
@@ -40,7 +41,7 @@ export const queryClient = new QueryClient({
 export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: `${import.meta.env.VITE_API_URL}/trpc`,
+      url: `${API_URL}/trpc`,
       transformer: superjson,
       headers() {
         const token = getToken()
